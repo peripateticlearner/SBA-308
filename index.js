@@ -76,14 +76,96 @@ const CourseInfo = {
     }
   ];
   
-  function getLearnerData(course, ag, submissions) {
-    // here, we would process this data to achieve the desired result.
-    
+// validate the input data
+
+function validateData(course, assignmentGroup) {
+  if (course.id !== assignmentGroup.course_id) {
+    throw new Error (` Invalid data: Assignment Group ${assignmentGroup.id} doesn't belong to Course ${course.id}`);
   }
+
+  assignmentGroup.assignments.forEach((assignment) => {
+    if (assignment.points_possible <= 0 || typeof assignment.points_possible !== "number") {
+        throw new Error(`Invalid data: Assignment ${assignment.id} has invalid points_possible .`);
+    }
+});
+}
+
+
+// filtering assignments based on the due date
+
+function getDueAssignments(assignments) {
+  const today = new Date().toISOString(); // grabbing current date using ISO format
+  return assignments.filter((assignment) =>  {
+    const dueDate = new Date(assignment.due_at);
+    return dueDate <= new Date(); // Include only assignments that are due today or in the past
+});
+}
+
+
+// Processing learner submissions
+
+function processSubmissions(assignmentGroup, submissions) {
+  const results = {};
+
+  submissions.forEach((submission) => {
+    const assignment = assignmentGroup.assignments.find((a) => a.id === submission.assignment_id);
+    // ignore submissions for assignments that are not part of the group
+    if (!assignment) return;
+
+    // skip assignments that are not yet due
+    const dueDate = new Date(assignment.due_at);
+      if (dueDate > new Date()) {
+          console.log(`Skipping future assignment: ${assignment.name}`);
+          return;
+      }
+
+    //Penalty for submitting late
+    const submissionDate = new Date(submission.submission.submitted_at);
+    let score = submission.submission.score;
+    
+    //Apply 10% penalty if it's a late submission
+    if (submissionDate > dueDate) {
+      score -= 0.1 * score;
+    }
+
+    // Grouping results by learner ID
+    if (!results[submission.learner_id]) {
+      results[submission.learner_id] = {
+        id: submission.learner_id,
+        avg: 0,
+        totalPoints: 0,
+        totalPossiblePoints: 0,
+      };
+    }
+
+    // Update total score and percentage
+    const learner = results[submission.learner_id];
+    const percentage = score / assignment.points_possible;
+    learner[assignment.id] = percentage; // storing the percentage for the assignment
+    learner.totalPoints += score; // updating total score
+    learner.totalPossiblePoints += assignment.points_possible; // updating total possible points
+  });
+
+  // Calculate weighted average for each leaner
+  Object.values(results).forEach((learner) => {
+    learner.avg = learner.totalPoints / learner.totalPossiblePoints;
+    delete learner.totalPoints;
+    delete learner.totalPossiblePoints;
+  });
+
+  return Object.values(results);
+}
+
+
+
+  // function getLearnerData(course, ag, submissions) {
+      // here, we would process this data to achieve the desired result.
+    
+  // }
   
-  const result = getLearnerData(CourseInfo, AssignmentGroup, LearnerSubmissions);
+  // const result = getLearnerData(CourseInfo, AssignmentGroup, LearnerSubmissions);
   
-  console.log(result);
+  // console.log(result);
 
 
 //   const result = [
