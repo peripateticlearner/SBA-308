@@ -125,7 +125,7 @@ function processSubmissions(assignmentGroup, submissions) {
     
     //Apply 10% penalty if it's a late submission
     if (submissionDate > dueDate) {
-      score -= 0.1 * score;
+      score = Math.round(score * 0.9); // Reduce by 10% with rounding
     }
 
     // Grouping results by learner ID
@@ -140,8 +140,8 @@ function processSubmissions(assignmentGroup, submissions) {
 
     // Update total score and percentage
     const learner = results[submission.learner_id];
-    const percentage = score / assignment.points_possible;
-    learner[assignment.id] = percentage; // storing the percentage for the assignment
+    const percentage = (score / assignment.points_possible).toFixed;
+    learner[assignment.id] = parseFloat(percentage); // storing the percentage for the assignment
     learner.totalPoints += score; // updating total score
     learner.totalPossiblePoints += assignment.points_possible; // updating total possible points
   });
@@ -156,18 +156,21 @@ function processSubmissions(assignmentGroup, submissions) {
   return Object.values(results);
 }
 
+// Function to get learner data
+// here, we would process this data to achieve the desired result.
+
+function getLearnerData(course, assignmentGroup, submissions) {
+  validateData(course, assignmentGroup); // Validate input
+  const dueAssignments = getDueAssignments(assignmentGroup.assignments); // Filter valid assignments
+  return processSubmissions({ assignments: dueAssignments }, submissions); // Process only due assignments
+}
+
+// Run the function and print the result
+const result = getLearnerData(CourseInfo, AssignmentGroup, LearnerSubmissions);
+console.log(result);
 
 
-  // function getLearnerData(course, ag, submissions) {
-      // here, we would process this data to achieve the desired result.
-    
-  // }
-  
-  // const result = getLearnerData(CourseInfo, AssignmentGroup, LearnerSubmissions);
-  
-  // console.log(result);
-
-
+//Expected output
 //   const result = [
 //     {
 //       id: 125,
